@@ -1,99 +1,34 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse  
-from pydantic import BaseModel, Field
-from typing import Literal, Annotated
 import pandas as pd
-import pickle
+from schema.user_input import UserInput 
+from Model.predict import predict_output
 
 app = FastAPI()
 
-def load_model():
-    with open("laptop_price_predictor.pkl", "rb") as file:
-        model = pickle.load(file)
-    return model
-
-class UserInput(BaseModel):
-    Brand: Annotated[Literal["Dell", "HP", "Lenovo", "Apple", "Asus", "Acer", "MSI"], Field(...,description="Brand of the laptop")]
-    Processor: Annotated[Literal['Intel Core i7', 'Intel Celeron', 'Intel Core i3', 'AMD Ryzen 3', 'AMD Ryzen 5', 'AMD Ryzen 7', 'Intel Core i5', 'AMD Ryzen', 'Intel Core i9', 'AMD Ryzen 9', '8 Core CPU', '10 Core CPU',
-       '11 Core CPU', '12 Core CPU', '14 Core CPU'], Field(...,description="processor of the laptop")]
-    Graphics: Annotated[Literal[' Intel UHD ', 'No Graphics', ' Intel ', ' AMD Radeon ', ' Intel Iris Xe ', ' AMD Radeon 610M ', ' Integrated Intel UHD ', ' AMD Radeon Vega 8 ', ' NVIDIA GeForce MX550 2GB ', ' GeForce MX550 2GB Dedicated ', ' NVIDIA GeForce RTX 2050 4GB ',
-       ' AMD Radeon RX 6550M 4GB ', ' NVIDIA RTX 2050 4GB ',
-       ' NVIDIA GeForce RTX 3050 6GB ', ' NVIDIA RTX 2050 ', ' RTX 2050 ',
-       ' RTX 2050 4GB ', ' NVIDIA GeForce RTX 3050 4GB ', ' Radeon ',
-       ' NVIDIA GeForce RTX 2050 ', ' NVIDIA RTX 3050 6GB ',
-       ' lntel UHD ', ' NVIDIA GeForce RTX 2050 4GB GDDR6 ',
-       ' Intel Arc ', ' NVIDIA GeForce RTX 4050 6GB ', 'NVIDIA RTX 3050 ',
-       ' NVIDIA RTX 4050 6GB ', ' NVIDIA RTX 4050 ', ' Integrated Intel ',
-       ' NVIDIA GeForce RTX 4050 ', ' Integrated Intel Iris Xe ',
-       ' RTX 3050 6GB ', ' NVIDIA RTX 3050Ti ',
-       ' NVIDIA GeForce RTX 4060 8GB ', ' NVIDIA GeForce RTX 3050 ',
-       ' NVIDIA RTX 4060 8GB ', 'NVIDIA RTX 3050Ti ',
-       ' Intel Integrated ', ' NVIDIA RTX 3060 ', ' RTX 4050 6GB GDDR6 ',
-       ' NVIDIA GeForce RTX 3060 6GB GDDR6 ',
-       ' NVIDIA GeForce RTX 4070 8GB ', ' NVIDIA RTX 3050 ',
-       ' RTX4050 6GB ', ' Dedicated NVIDIA GeForce RTX 4060 8GB ',
-       ' NVIDIA RTX 3070 ', ' RTX 4060 8GB ',
-       ' NVIDIA GeForce RTX 4060 8GB GDDR6 ', ' RTX 3060 ',
-       ' AMD RX6700M ', ' RTX4060 8GB ', ' RTX 4050 6GB ', ' 890M ',
-       ' NVIDIA RTX 3070Ti 8GB ', ' NVIDIA GeForce RTX 4070 8GB GDDR6 ',
-       ' RTX 4070 8GB ', ' NVIDIA GeForce RTX 4080 8GB ',
-       ' NVIDIA GeForce RTX 4080 12GB ', ' NVIDIA GeForce RTX 4090 16GB ',
-       '7 Core GPU', '8 Core GPU', '10 Core GPU', '14 Core GPU',
-       '16 Core GPU', '20 Core GPU', '32 Core GPU'], Field(...,description="graphics of the laptop")]
-    Series: Annotated[Literal['IdeaPad V15-IGL', 'Wyse', 'Aspire Series', 'IdeaPad Series',
-       'IdeaPad Slim 3 Series', 'Notebook', 'Vostro Series',
-       'IdeaPad Series (14IAU8)', 'V Series', 'Extensa Series',
-       'Inspiron Series', 'Notebook Series', 'V15 G3', 'ASPIRE 5',
-       'ASPIRE SERIES', 'IDEAPAD', 'VivoBook', 'ThinkBook Series',
-       'Ideapad Series', 'SWIFT\xa0', 'Swift Series', 'Business Series',
-       'Pavilion', 'VivoBook Go Series', 'VIVOBOOK',
-       'Pavilion Plus Series', 'Pavilion Series', 'Aspire Lite Series',
-       'Envy', 'VivoBook Series', 'Victus Gaming Series',
-       'Nitro V 15 Series', 'LOQ 15IRH8 Series', 'LOQ Series', 'Victus',
-       'Yoga Series', 'Nitro 5 Series', 'Gaming Series', 'Envy Series',
-       'INSPIRON', 'Nitro V 15', 'Modern Series', 'GF63 Series',
-       'TUF Gaming Series', 'Modern 15', 'Zenbook UM3402YA',
-       'LOQ Gaming Series', 'EliteBook Series', 'TUF Series',
-       'Cyborg Series', 'Nitro V Series', 'Envy x360', 'Vicuts Series',
-       'Nitro Series', 'IdeaPad 5', 'Vivobook K3405V', 'Nitro 5',
-       'Gaming Laptop Series', 'ThinkPad E14', 'Omen',
-       '\xa0TP3402-lZ26W (2-in-1)', 'Latitude Series', 'XPS Series',
-       'ZenBook Series', 'Predator Series', 'ThinkPad L14', 'KATANA',
-       'Nitro', 'Omen\xa0', 'Triton Series', 'Victus Series',
-       'Slim 7 Series', 'GL', 'TUF Gaming A15', 'Legion Series',
-       'Summit Series', 'Legion Slim 5 Series', 'V Gaming Series',
-       'Predator Helios Neo 16', 'Predator Triton Series', 'ZENBOOK',
-       'ROG ZEPHYRUS GAMING (GA503RM)', 'Alienware x14', 'Delta',
-       'ROG Strix Series', 'XPS', 'Alienware M15 R7', 'Spectre Series',
-       'GP66', 'ROG Zephyrus Series', 'Alienware Series', 'Creator',
-       'Alienware', 'ZenBook Duo Series', 'Creator Series',
-       'Zephyrus Series', 'MacBook Air M1', 'MacBook Air M2',
-       'MacBook Air M3', 'MacBook Air M4', 'MacBook Pro 14 M3',
-       'MacBook Pro 14 M4', 'MacBook Pro 14 M4 Pro',
-       'MacBook Pro 14 M4 Max', 'MacBook Pro 16 M4 Pro'], Field(...,description="series of the laptop")]
-    Ram: int = Field(..., ge=2, le=64, description="RAM in GB")
-    Storage: int = Field(..., ge=128, le=2064, description="Storage size in GB")
-
 @app.get("/")
-def read_root():
-    return {"message": "Welcome to the Laptop Price Prediction API"}
+def home():
+    return {"message": "Welcome to the Laptop Price Prediction API. Use the /predict endpoint to get predictions."} 
+
+@app.get("/health")
+def health_check():
+    return JSONResponse(status_code=200, content={"status": "OK", "message": "API is running smoothly."})
+
 
 @app.post("/predict")
 def predict_price(user_input: UserInput):
-    try:
-        model = load_model()
-
-        input_data = pd.DataFrame([{
+    input_data = {
             'Brand': user_input.Brand,
             'Processor': user_input.Processor,
             'Graphics': user_input.Graphics,
             'Series': user_input.Series,
             'Ram': user_input.Ram,
             'Storage': user_input.Storage
-        }])
+    }
 
-        prediction = model.predict(input_data)
-        return JSONResponse(status_code=200, content={"predicted_price": round(prediction[0], 2)})
+    try:
+        prediction = predict_output(input_data)
+        return JSONResponse(status_code=200, content={"predicted_price": prediction})
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
